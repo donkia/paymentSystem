@@ -11,7 +11,7 @@ public class CardInfo implements Serializable {
 
     private String cardNumber;
 
-    private String validDate;
+    private String expiryDate;
 
     private String cvc;
 }
