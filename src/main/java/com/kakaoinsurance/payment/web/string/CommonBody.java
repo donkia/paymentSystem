@@ -1,5 +1,9 @@
 package com.kakaoinsurance.payment.web.string;
 
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
 public class CommonBody {
 
     private String cardNumber;
@@ -16,7 +20,7 @@ public class CommonBody {
 
     private String controlNumber;
 
-    private String cardInfo;
+    private String encryptCardInfo;
 
     private String spare;
 
@@ -50,12 +54,13 @@ public class CommonBody {
     }
 
     public void setCardInfo(String cardInfo){
-        this.cardInfo = alignLeft(cardInfo, 300, " ");
+        this.encryptCardInfo = alignLeft(cardInfo, 300, " ");
     }
 
     public void setSpare(String spare){
         this.spare = alignLeft(spare, 47, " ");
     }
+
 
     @Override
     public String toString() {
@@ -67,7 +72,7 @@ public class CommonBody {
         stringBuilder.append(price);
         stringBuilder.append(vat);
         stringBuilder.append(controlNumber);
-        stringBuilder.append(cardInfo);
+        stringBuilder.append(encryptCardInfo);
         stringBuilder.append(spare);
 
         return stringBuilder.toString();

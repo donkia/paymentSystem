@@ -19,7 +19,7 @@ import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AES256UtilTest {
+class AES256UtilsTest {
 
     private String iv;
     private Key keySpec;

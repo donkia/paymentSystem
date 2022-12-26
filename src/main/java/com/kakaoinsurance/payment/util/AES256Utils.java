@@ -1,5 +1,6 @@
 package com.kakaoinsurance.payment.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -12,15 +13,17 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 
+//@Component
+@Slf4j
 @Component
-public class AES256Util {
-    private String iv;
-    private Key keySpec;
+public class AES256Utils {
+    private static String iv;
+    private static Key keySpec;
 
-    @Value("${aes.key}")
-    static String key;
+    @Value("${AES.KEY}")
+    private static String key = "kakao-insurance!";
 
-    public AES256Util() throws UnsupportedEncodingException {
+    public AES256Utils() throws UnsupportedEncodingException {
         this.iv = key.substring(0, 16);
         byte[] keyBytes = new byte[16];
         byte[] b = key.getBytes("UTF-8");
@@ -37,9 +40,10 @@ public class AES256Util {
     /**
      * AES256 으로 암호화
      */
-    public String encrypt(String str) throws NoSuchAlgorithmException,
+    public static String encrypt(String str) throws NoSuchAlgorithmException,
             GeneralSecurityException, UnsupportedEncodingException {
         Cipher c = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
         c.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv.getBytes()));
         byte[] encrypted = c.doFinal(str.getBytes("UTF-8"));
         String enStr = new String(Base64.encodeBase64(encrypted));
@@ -49,7 +53,7 @@ public class AES256Util {
     /**
      * AES256으로 복호화
      */
-    public String decrypt(String str) throws GeneralSecurityException, UnsupportedEncodingException {
+    public static String decrypt(String str) throws GeneralSecurityException, UnsupportedEncodingException {
         Cipher c = Cipher.getInstance("AES/CBC/PKCS5Padding");
         c.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(iv.getBytes()));
         byte[] byteStr = Base64.decodeBase64(str.getBytes());

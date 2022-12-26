@@ -1,5 +1,8 @@
 package com.kakaoinsurance.payment.web.string;
 
+import lombok.Getter;
+
+@Getter
 public class CommonHeader {
 
     private String dataLength;

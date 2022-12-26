@@ -4,6 +4,7 @@ package com.kakaoinsurance.payment.domain;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.Column;
@@ -20,6 +21,6 @@ public class BaseTimeEntity {
     @Column(updatable = false)
     private LocalDateTime createdDate;
 
-    @LastModifiedBy
+    @LastModifiedDate
     private LocalDateTime modifiedDate;
 }
