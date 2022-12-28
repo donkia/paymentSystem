@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
@@ -28,18 +29,21 @@ public class Payment extends BaseTimeEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(unique = true, length = 20)
     private String controlNumber; //관리번호
 
+    @Column(length = 20)
     private String cancelControlNumber; // 결제 취소 관리번호
 
     private int price; //가격
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 10)
     private PaymentStatus status;  //상태
 
     private int vat; //부가가치세
 
+    @Column(length = 2)
     private int installment; //할부개월수
 
     //@Embedded

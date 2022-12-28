@@ -1,6 +1,6 @@
 package com.kakaoinsurance.payment.policy;
 
-import com.kakaoinsurance.payment.domain.CardCompany;
+import com.kakaoinsurance.payment.domain.DeliveryCardCompany;
 import com.kakaoinsurance.payment.domain.Payment;
 import com.kakaoinsurance.payment.repository.CardRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +15,12 @@ public class DBCardPolicy implements CardPolicy{
 
     @Override
     public Boolean sendPayInfo(Payment payment) {
-        CardCompany cardCompany = CardCompany.builder()
+        DeliveryCardCompany deliveryCardCompany = DeliveryCardCompany.builder()
                 .controlNumber(payment.getControlNumber())
                 .stringData(payment.getStringData())
                 .build();
 
-        cardRepository.save(cardCompany);
+        cardRepository.save(deliveryCardCompany);
 
         return true;
     }
@@ -28,11 +28,11 @@ public class DBCardPolicy implements CardPolicy{
     @Override
     public Boolean sendCancelInfo(String controlNumber, String stringData) {
 
-        CardCompany cardCompany = CardCompany.builder()
+        DeliveryCardCompany deliveryCardCompany = DeliveryCardCompany.builder()
                 .controlNumber(controlNumber)
                 .stringData(stringData)
                 .build();
-        cardRepository.save(cardCompany);
+        cardRepository.save(deliveryCardCompany);
 
         return true;
     }

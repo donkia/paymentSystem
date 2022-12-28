@@ -24,11 +24,9 @@ public class PaymentListResponseDto {
 
     private int vat;    // 부가가치세
 
-    // private String payDate; // 최초결제일자
-    // private String cancelDate; // 취소일자
 
     @Builder
-    PaymentListResponseDto(String controlNumber, String cardNumber, String expiryDate, String cvc, String status, int price, int vat){
+    PaymentListResponseDto(String controlNumber, String cardNumber, String expiryDate, String cvc, String status, int price, int vat) {
         this.controlNumber = controlNumber;
         this.cardNumber = cardNumber;
         this.expiryDate = expiryDate;

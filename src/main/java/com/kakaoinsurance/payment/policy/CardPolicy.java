@@ -1,6 +1,5 @@
 package com.kakaoinsurance.payment.policy;
 
-import com.kakaoinsurance.payment.domain.CardCompany;
 import com.kakaoinsurance.payment.domain.Payment;
 
 public interface CardPolicy {
