@@ -4,6 +4,7 @@ import com.kakaoinsurance.payment.domain.Payment;
 import com.kakaoinsurance.payment.repository.PaymentRepository;
 import com.kakaoinsurance.payment.web.dto.CancelRequestDto;
 import com.kakaoinsurance.payment.web.dto.CancelResponseDto;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SpringBootTest
-public class PaymentMultiThreadTest {
+class PaymentMultiThreadTest {
 
     @Autowired
     private PaymentService paymentService;
@@ -84,10 +85,10 @@ public class PaymentMultiThreadTest {
         CountDownLatch latch = new CountDownLatch(numberOfExcute);
 
         Payment payment = Payment.builder()
-                .price(11000)
+                .price(110000)
                 .cvc("111")
                 .installment(1)
-                .vat(1000)
+                .vat(10000)
                 .cardNumber("1234567890123456")
                 .stringData("")
                 .expiryDate("1124")
@@ -102,8 +103,9 @@ public class PaymentMultiThreadTest {
             int finalI = i;
             service.execute(()->{
                         try{
-                            CancelResponseDto responseDto = paymentService.partialCancel(dto);
-                            //Thread.sleep(500000);
+                            //CancelResponseDto responseDto = paymentService.partialCancel(dto);
+                            paymentService.partialCancelByRedisson(dto);
+
                             successCount.getAndIncrement();
                         }catch (ObjectOptimisticLockingFailureException oe){
                             System.out.println("충돌 감지");
@@ -117,7 +119,7 @@ public class PaymentMultiThreadTest {
         }
         latch.await();
 
-        //Assertions.assertEquals();
+
 
     }
 }

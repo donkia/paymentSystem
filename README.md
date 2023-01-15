@@ -72,7 +72,6 @@ create table delivery_card_company (
 - output : PaymentListResponseDto(관리번호, 카드정보(마스킹), 결제/취소 구분, 금액정보, 부가가치세)
 
 ### 4. API요청 실패 시
-- 상세 에러 내용
  ```
   ErrorCode.java 참조
  ```
@@ -87,8 +86,33 @@ create table delivery_card_company (
   
 
 
-### 5. 선택문제 
-- 미구현
+### 5. Multi Thread 환경 대비
+- 비관적락을 통한 구현 : **PaymentRepository.java**
+ ```java
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<Payment> findByControlNumber(String controlNumber);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<Payment> findByCancelControlNumber(String cancelControlNumber);
+ ```
+- Redisson을 통한 분산락 구현 : **PaymentService**
+```java
+  public void partialCancelByRedisson(CancelRequestDto dto) throws GeneralSecurityException, UnsupportedEncodingException{
+    final RLock lock=redissonClient.getLock("partialCancel");
+    try{
+        if(!lock.tryLock(1,3,TimeUnit.SECONDS)){
+        throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        partialCancel(dto);
+    }catch(InterruptedException e){
+        e.printStackTrace();
+    }finally{
+        if(lock!=null&&lock.isLocked()){
+            lock.unlock();
+        }
+    }
+  }
+```
 
 ## 빌드 및 실행 방법
 ````

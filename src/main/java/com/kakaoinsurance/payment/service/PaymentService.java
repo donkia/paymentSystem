@@ -13,6 +13,8 @@ import com.kakaoinsurance.payment.util.StringDataUtils;
 import com.kakaoinsurance.payment.web.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -21,6 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,8 @@ public class PaymentService {
 
     private final CardPolicy cardPolicy;
     private final PaymentRepository paymentRepository;
+
+    private final RedissonClient redissonClient;
 
 
     // 부가가치세 계산
@@ -63,7 +68,7 @@ public class PaymentService {
         cardPolicy.sendPayInfo(payment);
 
         // 결제내역 별도로 저장
-        Payment savedPayment = paymentRepository.save(payment);
+        paymentRepository.save(payment);
 
         return PayResponseDto.builder()
                 .stringData(payment.getStringData())
@@ -78,7 +83,6 @@ public class PaymentService {
 
 
         // 부가가치세 계산 : 빈값으로 넘어왔을 때 자동계산
-        //if(dto.getVat().isEmpty()){
         if(dto.getVat() == null){
             dto.setVat(Optional.of(payment.getVat()));
         }
@@ -87,7 +91,6 @@ public class PaymentService {
 
         if(payment.getStatus().equals(PaymentStatus.CANCEL)){
             // 이미 취소된 데이터인 경우
-            //log.info("이미 취소된 결제건입니다.");
             throw new CustomException(ErrorCode.ALREADY_CANCEL);
         }
 
@@ -137,7 +140,6 @@ public class PaymentService {
 
         Payment payment = paymentRepository.findByControlNumber(dto.getControlNumber()).orElseThrow(()->new CustomException(ErrorCode.NUMBER_NOT_FOUND));
 
-
         // 부가가치세 계산 : 빈값으로 넘어왔을 때 자동계산
         if(dto.getVat() == null || dto.getVat().isEmpty()){
             dto.setVat(Optional.of(calculateVat(dto.getCancelPrice())));
@@ -180,4 +182,30 @@ public class PaymentService {
                 .controlNumber(cancelControlNumber)
                 .build();
     }
+
+
+    // 결제 부분 취소(Redisson 사용)
+    public void partialCancelByRedisson(CancelRequestDto dto) throws GeneralSecurityException, UnsupportedEncodingException {
+
+        final RLock lock = redissonClient.getLock("partialCancel");
+
+        try{
+
+            if(!lock.tryLock(1, 3, TimeUnit.SECONDS)){
+                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+            partialCancel(dto);
+
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }finally {
+            if(lock != null && lock.isLocked()){
+                lock.unlock();
+            }
+        }
+
+
+    }
+
+
 }

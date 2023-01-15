@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -41,6 +42,9 @@ class PaymentServiceTest {
 
     @Mock
     private CardPolicy dbCardPolicy;
+
+    @Mock
+    private RedissonClient redissonClient;
 
 
     @InjectMocks
@@ -96,7 +100,7 @@ class PaymentServiceTest {
 
         // when
         paymentRepository.save(payment);
-        PaymentService service = new PaymentService(dbCardPolicy, paymentRepository);
+        PaymentService service = new PaymentService(dbCardPolicy, paymentRepository, redissonClient);
         CancelRequestDto dto = new CancelRequestDto(payment.getControlNumber(), payment.getPrice(), Optional.of(payment.getVat()));
         CancelResponseDto responseDto = service.cancel(dto);
 
@@ -124,7 +128,7 @@ class PaymentServiceTest {
         lenient().when(paymentRepository.findByControlNumber(any(String.class))).thenReturn(Optional.of(payment));
 
         // when
-        PaymentService service = new PaymentService(dbCardPolicy, paymentRepository);
+        PaymentService service = new PaymentService(dbCardPolicy, paymentRepository, redissonClient);
         paymentRepository.save(payment);
 
         PaymentListResponseDto paymentListResponseDto = service.getPaymentList(payment.getControlNumber());
