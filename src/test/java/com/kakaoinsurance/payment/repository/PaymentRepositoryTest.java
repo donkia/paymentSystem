@@ -19,8 +19,6 @@ class PaymentRepositoryTest {
     @Autowired
     PaymentRepository paymentRepository;
 
-    //@Autowired
-    //AES256Utils aes256Utils;
 
     @Test
     void 데이터저장() throws GeneralSecurityException, UnsupportedEncodingException {
@@ -69,4 +67,32 @@ class PaymentRepositoryTest {
 
     }
 
+    @Test
+    void 제약조건확인() throws GeneralSecurityException, UnsupportedEncodingException {
+        Payment payment = Payment.builder()
+                .price(11000)
+                .cvc("111")
+                .installment(1)
+                .vat(1000)
+                .cardNumber("1234567890123456")
+                .stringData("")
+                .expiryDate("1124")
+                .controlNumber("a1234567890123456789")
+                .build();
+
+        paymentRepository.save(payment);
+
+        Payment sameControlNumberPayment = Payment.builder()
+                .price(11000)
+                .cvc("111")
+                .installment(1)
+                .vat(1000)
+                .cardNumber("1234567890123456")
+                .stringData("")
+                .expiryDate("1124")
+                .controlNumber("a1234567890123456789")
+                .build();
+        assertThrows(RuntimeException.class, () -> paymentRepository.save(sameControlNumberPayment));
+
+    }
 }

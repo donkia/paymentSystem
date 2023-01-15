@@ -19,6 +19,13 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    /***
+     * 결제 서비스
+     * @param dto
+     * @param bindingResult
+     * @return 정상적인 경우 PayResponseDto를 담은 PayResponseDto 리턴
+     * @throws Exception
+     */
     @PostMapping("/api/v1/pay")
     public ResponseEntity<?> pay(@RequestBody @Valid PayRequestDto dto, BindingResult bindingResult) throws Exception {
 
@@ -27,8 +34,10 @@ public class PaymentController {
             throw new IllegalArgumentException(bindingResult.getFieldError().getDefaultMessage());
         }
 
-        if(dto.getVat().isPresent() && dto.getPrice() < dto.getVat().get()){
-            throw new IllegalArgumentException("부가가치세가 결제 금액보다 클 수 없습니다");
+        if(dto.getVat() != null){
+            if(dto.getVat().isPresent() && dto.getPrice() < dto.getVat().get()){
+                throw new IllegalArgumentException("부가가치세가 결제 금액보다 클 수 없습니다");
+            }
         }
 
         PayResponseDto responseDto = paymentService.pay(dto);
@@ -36,6 +45,13 @@ public class PaymentController {
 
     }
 
+    /***
+     * 결제 취소 서비스
+     * @param dto
+     * @param bindingResult
+     * @return CancelResponseDto를 담아 ResponseEntity 리턴
+     * @throws Exception
+     */
     @PutMapping("/api/v1/pay")
     public ResponseEntity<?> cancel(@RequestBody @Valid CancelRequestDto dto, BindingResult bindingResult) throws Exception {
 
@@ -43,9 +59,17 @@ public class PaymentController {
             throw new IllegalArgumentException(bindingResult.getFieldError().getDefaultMessage());
         }
 
-        CancelResponseDto responseDto = paymentService.cancel(dto);
+        //CancelResponseDto responseDto = paymentService.cancel(dto);
+        CancelResponseDto responseDto = paymentService.partialCancel(dto);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
+
+    /***
+     * 결제 데이터 조회
+     * @param id
+     * @return PaymentListResponseDto를 담아 ResponseEntity 리턴
+     * @throws Exception
+     */
 
     @GetMapping("/api/v1/pay/{id}")
     public ResponseEntity<?> getPaymentList(@PathVariable(value = "id") String id) throws Exception {

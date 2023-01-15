@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
@@ -38,7 +39,7 @@ public class Payment extends BaseTimeEntity implements Serializable {
     private int price; //가격
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 10)
+    @Column(length = 15)
     private PaymentStatus status;  //상태
 
     private int vat; //부가가치세
@@ -54,6 +55,7 @@ public class Payment extends BaseTimeEntity implements Serializable {
     @Column(length = 450)
     private String stringData; // string 데이터
 
+
     @Builder
     public Payment(String controlNumber, int price, int vat, int installment, String cardNumber, String expiryDate, String cvc, String stringData) throws GeneralSecurityException, UnsupportedEncodingException {
         AES256Utils aes256Utils = new AES256Utils();
@@ -63,7 +65,8 @@ public class Payment extends BaseTimeEntity implements Serializable {
         this.status = PaymentStatus.PAYMENT;
         this.vat = vat;
         this.installment = installment;
-        this.encryptCardInfo = aes256Utils.encrypt(cardNumber + "|" + expiryDate + "|" + cvc);
+        //this.encryptCardInfo = aes256Utils.encrypt(cardNumber + "|" + expiryDate + "|" + cvc);
+        this.encryptCardInfo = AES256Utils.encrypt(cardNumber + "|" + expiryDate + "|" + cvc);
         this.stringData = stringData;
     }
 
@@ -87,6 +90,8 @@ public class Payment extends BaseTimeEntity implements Serializable {
                 .stringData(payment.getStringData())
                 .build();
     }
+
+    // 카드번호 마스킹
     private static String maskCardNumber(String cardNumber){
         StringBuilder masking = new StringBuilder(cardNumber);
         masking.replace(6, cardNumber.length() - 3, "*");
@@ -107,6 +112,7 @@ public class Payment extends BaseTimeEntity implements Serializable {
                 .build();
     }
 
+    // 전체 취소할 때
     public void cancelPayment(String cancelControlNumber, String stringData){
         this.status = PaymentStatus.CANCEL;
         this.installment = 0;
@@ -114,6 +120,31 @@ public class Payment extends BaseTimeEntity implements Serializable {
         this.stringData = stringData;
 
     }
+
+
+    // 취소가 가능한지 확인
+    public Boolean isPossibleCancel(int price, int vat){
+        if(price <= this.price && vat <= this.vat && this.price-price >= this.vat - vat){
+            return true;
+        }
+        return false;
+    }
+
+    // 부분 결제 취소 시
+    public void setPartialCancel(int price, int vat, String cancelControlNumber, String stringData){
+        this.status = PaymentStatus.PARTIAL_CANCEL;
+        this.installment = 0;
+        this.cancelControlNumber = cancelControlNumber;
+        this.stringData = stringData;
+        this.price -= price;
+        this.vat -= vat;
+
+        if(this.price == 0 && this.vat == 0){
+            this.status = PaymentStatus.CANCEL;
+        }
+    }
+
+
 
 
 

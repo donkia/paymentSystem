@@ -17,10 +17,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -131,4 +136,46 @@ class PaymentServiceTest {
 
     }
 
+
+    @Test
+    @DisplayName("멀티 스레드 테스트")
+    void threadTest() throws GeneralSecurityException, UnsupportedEncodingException {
+        AtomicInteger successCount = new AtomicInteger();
+        int numberOfExcute = 5;
+        ExecutorService service = Executors.newFixedThreadPool(5);
+        CountDownLatch latch = new CountDownLatch(numberOfExcute);
+
+        Payment payment = Payment.builder()
+                .price(10000)
+                .cvc("111")
+                .installment(1)
+                .vat(100)
+                .cardNumber("1234567890123456")
+                .stringData("")
+                .expiryDate("1124")
+                .controlNumber("a1234567890123456789")
+                .build();
+        paymentRepository.save(payment);
+
+        CancelRequestDto dto = new CancelRequestDto(payment.getControlNumber(), payment.getPrice(), Optional.of(payment.getVat()));
+
+
+        for(int i = 0; i < numberOfExcute; i++){
+            service.execute(()->{
+                try{
+                    paymentService.cancel(dto);
+                    successCount.getAndIncrement();
+
+                }catch (ObjectOptimisticLockingFailureException oe){
+                    System.out.println("충돌 감지");
+                }catch (Exception e){
+                    System.out.println("exception : " + e.getMessage());
+                }
+
+            }
+
+            );
+        }
+
+    }
 }

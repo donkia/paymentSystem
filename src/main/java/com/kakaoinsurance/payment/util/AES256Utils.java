@@ -13,9 +13,7 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 
-//@Component
 @Slf4j
-@Component
 public class AES256Utils {
     private static String iv;
     private static Key keySpec;

@@ -41,7 +41,7 @@ public class PaymentService {
     public PayResponseDto pay(PayRequestDto dto) throws Exception {
 
         // 부가가치세 계산 : 빈값으로 넘어왔을 때 자동계산
-        if(dto.getVat().isEmpty()){
+        if(dto.getVat() == null || dto.getVat().isEmpty()){
             dto.setVat(Optional.of(calculateVat(dto.getPrice())));
         }
 
@@ -58,7 +58,6 @@ public class PaymentService {
 
         // DB에 데이터 적재
         Payment payment = Payment.convertDtoToPayment(dto, newControlNumber, stringData);
-        //log.info(payment.hashCode());
 
         // 카드사에 전달
         cardPolicy.sendPayInfo(payment);
@@ -72,13 +71,15 @@ public class PaymentService {
                 .build();
     }
 
+    // 결제 취소
     public CancelResponseDto cancel(CancelRequestDto dto) throws GeneralSecurityException, UnsupportedEncodingException {
 
         Payment payment = paymentRepository.findByControlNumber(dto.getControlNumber()).orElseThrow(()->new CustomException(ErrorCode.NUMBER_NOT_FOUND));
-        //Payment payment = paymentRepository.findByControlNumber(dto.getControlNumber()).get();
+
 
         // 부가가치세 계산 : 빈값으로 넘어왔을 때 자동계산
-        if(dto.getVat().isEmpty()){
+        //if(dto.getVat().isEmpty()){
+        if(dto.getVat() == null){
             dto.setVat(Optional.of(payment.getVat()));
         }
 
@@ -86,6 +87,7 @@ public class PaymentService {
 
         if(payment.getStatus().equals(PaymentStatus.CANCEL)){
             // 이미 취소된 데이터인 경우
+            //log.info("이미 취소된 결제건입니다.");
             throw new CustomException(ErrorCode.ALREADY_CANCEL);
         }
 
@@ -130,4 +132,52 @@ public class PaymentService {
 
     }
 
+    // 결제 부분 취소
+    public CancelResponseDto partialCancel(CancelRequestDto dto) throws GeneralSecurityException, UnsupportedEncodingException {
+
+        Payment payment = paymentRepository.findByControlNumber(dto.getControlNumber()).orElseThrow(()->new CustomException(ErrorCode.NUMBER_NOT_FOUND));
+
+
+        // 부가가치세 계산 : 빈값으로 넘어왔을 때 자동계산
+        if(dto.getVat() == null || dto.getVat().isEmpty()){
+            dto.setVat(Optional.of(calculateVat(dto.getCancelPrice())));
+        }
+
+        log.info("payment : {}", payment);
+
+        if(payment.getStatus().equals(PaymentStatus.CANCEL)){
+            // 이미 취소된 데이터인 경우
+            log.info("이미 취소 완료된 결제건입니다.");
+            throw new CustomException(ErrorCode.ALREADY_CANCEL);
+        }
+
+        if(!payment.isPossibleCancel(dto.getCancelPrice(), dto.getVat().get())){
+            log.info("부분 결제 취소를 할 수 없습니다.");
+            throw new CustomException(ErrorCode.DO_NOT_PARTIAL_CANCEL);
+        }
+
+        // 취소 전용 관리번호 생성
+        String cancelControlNumber = ControlNumberUtils.createControlNumber();
+        if(paymentRepository.findByCancelControlNumber(cancelControlNumber).isPresent()){
+            // 이미 존재하는 관리번호일 경우
+            throw new CustomException(ErrorCode.ALREADY_SAVED_NUMBER);
+        }
+
+
+        // 취소 stringdata 생성
+        String stringData = StringDataUtils.setCancelStringData(dto, payment, cancelControlNumber);
+
+        // 카드사에 전달
+        cardPolicy.sendCancelInfo(cancelControlNumber, stringData);
+
+        // 취소내역 별도 DB 저장
+        payment.setPartialCancel(dto.getCancelPrice(), dto.getVat().get(), cancelControlNumber, stringData);
+
+
+        log.info("price : " + payment.getPrice() +", vat : " + payment.getVat());
+        return CancelResponseDto.builder()
+                .stringData(stringData)
+                .controlNumber(cancelControlNumber)
+                .build();
+    }
 }

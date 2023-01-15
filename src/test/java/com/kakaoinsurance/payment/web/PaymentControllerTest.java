@@ -61,6 +61,7 @@ class PaymentControllerTest {
 
     @Test
     @DisplayName("결제 통합 테스트")
+    @Order(1)
     void pay() throws JsonProcessingException {
 
         // given
@@ -72,7 +73,7 @@ class PaymentControllerTest {
         HttpEntity<String> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<String> response = rt.exchange("/api/v1/pay", HttpMethod.POST, request, String.class);
-
+        System.out.println(response.toString());
         ObjectMapper mapper = new ObjectMapper();
 
         // then
@@ -100,6 +101,7 @@ class PaymentControllerTest {
 
     @Test
     @DisplayName("결제취소 통합테스트")
+    @Order(2)
     void cancel() throws JsonProcessingException {
         pay_test();
         Payment payment = paymentRepository.findAll().get(1);
@@ -132,6 +134,7 @@ class PaymentControllerTest {
 
     @Test
     @DisplayName("결제 목록 통합테스트")
+    @Order(3)
     void getPaymentList() throws JsonProcessingException {
         // given
 
